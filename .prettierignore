@@ -1,0 +1,7 @@
+node_modules
+dist
+specs
+architecture
+*.db
+package-lock.json
+apps/web/src/components/ui

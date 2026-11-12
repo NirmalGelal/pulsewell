@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   // Role
+  displayName  String
+  createdAt    DateTime @default(now())
+  patientLinks   CareLink[] @relation("PatientLinks")
+  clinicianLinks CareLink[] @relation("ClinicianLinks")
+  sessions       Session[]
+}
+
+model CareLink {
+  id          String   @id @default(cuid())
+  patientId   String
+  clinicianId String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  patient     User @relation("PatientLinks",   fields: [patientId],   references: [id], onDelete: Cascade)
+  clinician   User @relation("ClinicianLinks", fields: [clinicianId], references: [id], onDelete: Cascade)
+  @@unique([patientId, clinicianId])
+}
+
+model Session {
+  id             String    @id @default(cuid())
+  patientId      String
+  state          String    // SessionState
+  consentVersion String
+  consentedAt    DateTime
+  cacheSalt      String    // base64, 32 random bytes; never sent to clients
+  nextTurnId     Int       @default(1)
+  riskLevel      String    @default("none") // RiskLevel = max over SafetyEvents
+  interviewState String    @default("{}")   // Json<InterviewState> (§12) — planner memory, server-only
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  patient        User      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  checklist      ChecklistItem[]
+  safetyEvents   SafetyEvent[]
+  alerts         Alert[]
+  report         Report?
+  @@index([patientId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  turnId    Int      // 1,2,3… per session, shared by both senders
+  sender    String   // Sender
+  text      String
+  inputMode String   // InputMode (COMPANION messages use 'TEXT')
+  redacted  Boolean  @default(false) // true = hidden from clinician (patient removed it); never true for turns with SafetyEvents
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@unique([sessionId, turnId])
+}
+
+model SafetyEvent {
+  id         String   @id @default(cuid())
+  sessionId  String
+  turnId     Int
+  level      String   // RiskLevel (never 'none' — 'none' results are not stored)
+  categories String   // Json<RiskCategory[]>
+  evidence   String   // exact phrase from the patient message ('' if none)
+  source     String   // SafetySource
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  alert      Alert?
+}
+
+model ChecklistItem {
+  id         String   @id @default(cuid())
+  sessionId  String
+  key        String   // ChecklistKey
+  status     String   // ItemStatus
+  value      Int?     // 0..3 for instrument items; null for domains
+  confidence Float    // 0..1
+  note       String?  // short tracker note for domains (clinical, third person)
+  turnIds    String   // Json<number[]>
+  source     String   // ChecklistSource
+  updatedAt  DateTime @updatedAt
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@unique([sessionId, key])
+}
+
+model Report {
+  id           String    @id @default(cuid())
+  sessionId    String    @unique
+  status       String    // ReportStatus
+  draftJson    String    // Json<ReportContent> exactly as generated (never modified)
+  currentJson  String    // Json<ReportContent> with patient edits applied
+  approvedAt   DateTime?
+  reviewedAt   DateTime?
+  reviewedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  edits        ReportEdit[]
+  notes        ClinicianNote[]
+}
+
+model ReportEdit {
+  id           String   @id @default(cuid())
+  reportId     String
+  kind         String   // EditKind
+  section      String   // AnnotatableSection
+  itemId       String?
+  originalText String?
+  newText      String?
+  createdAt    DateTime @default(now())
+  report       Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model ClinicianNote {
+  id          String   @id @default(cuid())
+  reportId    String
+  clinicianId String
+  text        String
+  createdAt   DateTime @default(now())
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model FollowUp {
+  id               String   @id @default(cuid())
+  patientId        String
+  clinicianId      String
+  questions        String   // Json<string[]> (1..3)
+  status           String   // FollowUpStatus
+  askedInSessionId String?
+  createdAt        DateTime @default(now())
+}
+
+model Alert {
+  id               String    @id @default(cuid())
+  sessionId        String
+  patientId        String
+  safetyEventId    String    @unique
+  level            String    // RiskLevel (always 'imminent' in v1)
+  evidence         String
+  createdAt        DateTime  @default(now())
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  session          Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  safetyEvent      SafetyEvent @relation(fields: [safetyEventId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  action       String   // AuditAction (M02)
+  resourceType String
+  resourceId   String?
+  meta         String?  // Json<Record<string, string|number|boolean>> — never PHI
+  createdAt    DateTime @default(now())
+}
