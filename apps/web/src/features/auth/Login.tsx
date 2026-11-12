@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { Wordmark } from '@/components/Wordmark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
@@ -37,9 +38,7 @@ export default function Login() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[26rem] flex-col justify-center px-5 py-10">
-      <p className="font-serif text-[1.1875rem] font-medium tracking-tight text-primary">
-        Patient Voice<span className="text-muted-foreground"> Companion</span>
-      </p>
+      <p><Wordmark /></p>
       <h1 className="mt-10 text-[2.125rem] leading-tight">Log in to continue</h1>
       <p className="mt-3 text-muted-foreground">
         You will see a summary of your conversation and decide what is shared before your clinician

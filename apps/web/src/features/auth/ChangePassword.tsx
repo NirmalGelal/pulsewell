@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { ChangePasswordRequestSchema, MIN_PASSWORD_LENGTH, UserDtoSchema } from '@pvc/shared';
+import { Wordmark } from '@/components/Wordmark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiError, api } from '@/lib/api';
@@ -55,9 +56,7 @@ export function ChoosePassword() {
   const type = show ? 'text' : 'password';
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[26rem] flex-col justify-center px-5 py-10">
-      <p className="font-serif text-[1.1875rem] font-medium tracking-tight text-primary">
-        Patient Voice<span className="text-muted-foreground"> Companion</span>
-      </p>
+      <p><Wordmark /></p>
       <h1 className="mt-10 text-[2.125rem] leading-tight">Choose a new password</h1>
       <p className="mt-3 text-muted-foreground">
         You logged in with a temporary password. Pick one only you know. You will use it from now

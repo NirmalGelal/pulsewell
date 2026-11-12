@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Wordmark } from '@/components/Wordmark';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
@@ -29,9 +30,7 @@ export function AppShell({ variant, children, actions }: AppShellProps) {
             patient ? 'max-w-[42rem]' : 'max-w-none sm:px-6',
           )}
         >
-          <span className="whitespace-nowrap font-serif text-[1.1875rem] font-medium tracking-tight text-primary">
-            Patient Voice<span className="text-muted-foreground"> Companion</span>
-          </span>
+          <Wordmark />
           <div className="flex items-center gap-2">
             {actions}
             {user && (

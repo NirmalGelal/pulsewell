@@ -10,7 +10,7 @@ Two groups sharing one system.
 - **Clinicians**: busy psychiatrists, therapists and care coordinators, often at a desk between appointments. Their job: triage a queue, read a structured pre-visit summary with evidence, spot risk fast, and follow up.
 
 ## Product Purpose
-Patient Voice Companion collects a patient's story in conversation, screens with PHQ-9 and GAD-7 (scores computed in code, never by a model), and produces a report the patient approves before the clinician sees it. It screens and summarizes; it never diagnoses or advises treatment. Success: patients feel heard and in control; clinicians get a trustworthy, scannable summary and see imminent risk immediately.
+PulseWell collects a patient's story in conversation, screens with PHQ-9 and GAD-7 (scores computed in code, never by a model), and produces a report the patient approves before the clinician sees it. It screens and summarizes; it never diagnoses or advises treatment. Success: patients feel heard and in control; clinicians get a trustworthy, scannable summary and see imminent risk immediately.
 
 ## Brand Personality
 Quiet, human, trustworthy. Unhurried and plain-spoken, like a well-run therapy practice or a good paper journal. Warmth comes from wording, type and restraint, not from decoration.

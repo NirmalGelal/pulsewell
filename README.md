@@ -1,4 +1,4 @@
-# Patient Voice Companion
+# PulseWell
 
 A patient-facing voice/text companion that interviews a patient before a visit, produces an evidence-linked
 summary the patient reviews and approves, and gives the clinician a triage queue, transcript-linked report,
