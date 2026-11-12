@@ -14,5 +14,7 @@ npm run verify                # typecheck + lint + all tests
 
 Demo accounts (password `demo1234`): `patient@demo.test`, `patient2@demo.test`, `patient3@demo.test`, `clinician@demo.test`.
 
+New patients: a clinician uses Patients > Add patient (email + name). The app shows a temporary password once; the patient must choose their own password at first login. Clinicians can issue a new temporary password from the patient page (Reset password).
+
 - Demo script and fallbacks: [docs/DEMO.md](docs/DEMO.md)
 - Specs, contracts and build log: [specs/](specs/README.md)

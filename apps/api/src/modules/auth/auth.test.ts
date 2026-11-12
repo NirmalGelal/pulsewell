@@ -18,6 +18,7 @@ describe('auth', () => {
       email: 'patient@demo.test',
       role: 'PATIENT',
       displayName: 'Sam R.',
+      mustChangePassword: false,
     });
     expect(JSON.stringify(res.body)).not.toContain('passwordHash');
   });

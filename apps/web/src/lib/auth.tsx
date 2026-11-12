@@ -19,6 +19,8 @@ interface AuthContextValue {
   status: AuthStatus;
   login: (email: string, password: string) => Promise<UserDto>;
   logout: () => void;
+  /** Replace the cached user, e.g. after a password change clears `mustChangePassword`. */
+  updateUser: (user: UserDto) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -78,7 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('unauthenticated');
   }, []);
 
-  const value = useMemo(() => ({ user, status, login, logout }), [user, status, login, logout]);
+  const updateUser = useCallback((u: UserDto) => setUser(u), []);
+
+  const value = useMemo(
+    () => ({ user, status, login, logout, updateUser }),
+    [user, status, login, logout, updateUser],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

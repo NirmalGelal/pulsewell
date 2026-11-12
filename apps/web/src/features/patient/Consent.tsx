@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { CONSENT_VERSION, SessionDetailDtoSchema, type SessionDetailDto } from '@pvc/shared';
 import { Button } from '@/components/ui/button';
 import { ApiError, api } from '@/lib/api';
 import { queryKeys } from '@/lib/query';
+import { setMode, videoPath, videoSupported } from './video/prefs';
 
 const CliniciansSchema = z.object({
   clinicians: z.array(z.object({ id: z.string(), displayName: z.string() })),
@@ -13,6 +14,7 @@ const CliniciansSchema = z.object({
 
 export default function Consent() {
   const navigate = useNavigate();
+  const wantsVideo = useSearchParams()[0].get('mode') === 'video' && videoSupported();
   const qc = useQueryClient();
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,13 @@ export default function Consent() {
     onSuccess: (detail) => {
       qc.setQueryData(queryKeys.session(detail.session.id), detail);
       void qc.invalidateQueries({ queryKey: queryKeys.sessions });
-      navigate(`/patient/session/${detail.session.id}`, { replace: true });
+      if (wantsVideo) setMode('video');
+      navigate(
+        wantsVideo ? videoPath(detail.session.id) : `/patient/session/${detail.session.id}`,
+        {
+          replace: true,
+        },
+      );
     },
     onError: (err) => {
       const existing =
@@ -39,7 +47,9 @@ export default function Consent() {
           ? (err.details as { sessionId?: string } | undefined)?.sessionId
           : undefined;
       if (existing) {
-        navigate(`/patient/session/${existing}`, { replace: true });
+        navigate(wantsVideo ? videoPath(existing) : `/patient/session/${existing}`, {
+          replace: true,
+        });
         return;
       }
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
@@ -102,8 +112,17 @@ export default function Consent() {
           start.mutate();
         }}
       >
-        {start.isPending ? 'Starting…' : 'Start'}
+        {start.isPending ? 'Starting…' : wantsVideo ? 'Start video session' : 'Start'}
       </Button>
+      {videoSupported() && (
+        <Link
+          to={wantsVideo ? '/patient/consent' : '/patient/consent?mode=video'}
+          replace
+          className="mt-3 inline-flex min-h-11 items-center text-base underline underline-offset-4"
+        >
+          {wantsVideo ? 'Use text chat instead' : 'Use a video session instead'}
+        </Link>
+      )}
     </div>
   );
 }

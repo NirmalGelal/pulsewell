@@ -5,6 +5,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  CONFLICT: 409,
   INVALID_STATE: 409,
   PAYLOAD_TOO_LARGE: 413,
   LLM_UNAVAILABLE: 503,
@@ -30,6 +31,8 @@ export const unauthenticated = (message = 'Authentication required') =>
   new AppError('UNAUTHENTICATED', message);
 export const forbidden = (message = 'Forbidden') => new AppError('FORBIDDEN', message);
 export const notFound = (message = 'Not found') => new AppError('NOT_FOUND', message);
+export const conflict = (message: string, details?: unknown) =>
+  new AppError('CONFLICT', message, details);
 export const invalidState = (message: string) => new AppError('INVALID_STATE', message);
 export const llmUnavailable = (message = 'The language model is unavailable') =>
   new AppError('LLM_UNAVAILABLE', message);

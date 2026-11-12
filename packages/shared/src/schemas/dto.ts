@@ -17,6 +17,7 @@ export const UserDtoSchema = z.object({
   email: z.string(),
   role: z.enum(ROLES),
   displayName: z.string(),
+  mustChangePassword: z.boolean().default(false),
 });
 export type UserDto = z.infer<typeof UserDtoSchema>;
 

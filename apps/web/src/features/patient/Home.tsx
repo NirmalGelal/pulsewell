@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { queryKeys } from '@/lib/query';
 import { cn } from '@/lib/utils';
 import { formatDate, sessionPath, STATE_LABELS } from './labels';
+import { getMode, videoPath, videoSupported } from './video/prefs';
 
 const SessionsSchema = z.object({ sessions: z.array(SessionSummaryDtoSchema) });
 const FollowUpsSchema = z.object({ followUps: z.array(FollowUpDtoSchema) });
@@ -28,6 +29,8 @@ export default function Home() {
   const list = sessions.data?.sessions ?? [];
   const active = list.find((s) => s.state === 'INTERVIEWING' || s.state === 'CRISIS_PAUSED');
   const followUp = followUps.data?.followUps[0];
+  const video = videoSupported();
+  const prefersVideo = video && getMode() === 'video';
 
   return (
     <div className="mx-auto w-full max-w-[42rem] px-4 pb-16 pt-10 sm:pt-14">
@@ -55,12 +58,42 @@ export default function Home() {
             <span className="sr-only">Loading…</span>
           </div>
         ) : (
-          <Link
-            to={active ? `/patient/session/${active.id}` : '/patient/consent'}
-            className={cn(buttonVariants(), 'h-14 w-full px-6 text-[1.1875rem]')}
-          >
-            {active ? 'Continue your conversation' : 'Start a conversation'}
-          </Link>
+          <div className="space-y-3">
+            {video && !active && (
+              <Link
+                to="/patient/consent?mode=video"
+                className={cn(buttonVariants(), 'h-14 w-full px-6 text-[1.1875rem]')}
+              >
+                Start a video session
+              </Link>
+            )}
+            <Link
+              to={
+                active
+                  ? prefersVideo
+                    ? videoPath(active.id)
+                    : `/patient/session/${active.id}`
+                  : '/patient/consent'
+              }
+              className={cn(
+                buttonVariants({ variant: video && !active ? 'outline' : 'default' }),
+                'h-14 w-full px-6 text-[1.1875rem]',
+              )}
+            >
+              {active ? 'Continue your conversation' : 'Start a conversation'}
+            </Link>
+            {video && active && (
+              <Link
+                to={prefersVideo ? `/patient/session/${active.id}` : videoPath(active.id)}
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'h-14 w-full px-6 text-[1.1875rem]',
+                )}
+              >
+                {prefersVideo ? 'Continue in text' : 'Continue as a video session'}
+              </Link>
+            )}
+          </div>
         )}
         {sessions.isError && (
           <p role="alert" className="mt-3 text-foreground">

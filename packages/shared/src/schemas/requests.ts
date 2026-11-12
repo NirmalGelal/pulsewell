@@ -8,6 +8,37 @@ export const LoginRequestSchema = z.object({
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
+export const MIN_PASSWORD_LENGTH = 10;
+
+export const ChangePasswordRequestSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z
+      .string()
+      .min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters`)
+      .max(200),
+  })
+  .refine((v) => v.currentPassword !== v.newPassword, {
+    message: 'Choose a password you have not used just now',
+    path: ['newPassword'],
+  });
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
+
+export const CreatePatientRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  displayName: z.string().trim().min(1).max(80),
+});
+export type CreatePatientRequest = z.infer<typeof CreatePatientRequestSchema>;
+
+export const CreatePatientResponseSchema = z.object({
+  patient: z.object({ id: z.string(), email: z.string(), displayName: z.string() }),
+  temporaryPassword: z.string(),
+});
+export type CreatePatientResponse = z.infer<typeof CreatePatientResponseSchema>;
+
+export const ResetPasswordResponseSchema = z.object({ temporaryPassword: z.string() });
+export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
+
 export const CreateSessionRequestSchema = z.object({
   consent: z.object({ accepted: z.literal(true), version: z.string().min(1) }),
 });

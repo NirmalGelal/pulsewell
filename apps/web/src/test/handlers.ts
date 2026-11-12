@@ -13,12 +13,14 @@ export const patientUser: UserDto = {
   email: 'patient@demo.test',
   role: 'PATIENT',
   displayName: 'Sam Rivera',
+  mustChangePassword: false,
 };
 export const clinicianUser: UserDto = {
   id: 'u-clin',
   email: 'clinician@demo.test',
   role: 'CLINICIAN',
   displayName: 'Dr. Jordan Lee',
+  mustChangePassword: false,
 };
 
 export function sessionDetail(over: Partial<SessionDetailDto> = {}): SessionDetailDto {

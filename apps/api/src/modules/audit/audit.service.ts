@@ -18,7 +18,10 @@ export type AuditAction =
   | 'note.create'
   | 'assistant.ask'
   | 'followup.create'
-  | 'speech.transcribe';
+  | 'speech.transcribe'
+  | 'patient.create'
+  | 'patient.reset_password'
+  | 'auth.change_password';
 
 export interface AuditEntry {
   actorId: string | null;

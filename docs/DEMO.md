@@ -25,6 +25,14 @@ curl "$NRP_BASE_URL/models" -H "Authorization: Bearer $NRP_API_KEY"
 Override any role with `MODEL_INTERVIEWER`, `MODEL_SAFETY`, `MODEL_TRACKER`, `MODEL_REPORT_WRITER`,
 `MODEL_VERIFIER`, `MODEL_ASSISTANT`, `MODEL_STT`.
 
+### Onboarding a new patient
+
+1. Log in as `clinician@demo.test`, open Patients, press Add patient, enter a name and email, press Create account.
+2. Copy the one-time temporary password (it is not shown again; use Reset password on the patient page to get a new one).
+3. Log in as the new patient with that password. The app asks for a new password (10+ characters) before anything else, then opens the patient home.
+
+Seeded accounts are unaffected and never prompt for a password change.
+
 ## What the seed creates
 
 | Patient  | Scenario                                                                              | You will see                                                                                          |

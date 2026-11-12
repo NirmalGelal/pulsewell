@@ -4,7 +4,7 @@ import type { User } from '@prisma/client';
 import { ROLES, type Role, type UserDto } from '@pvc/shared';
 import type { AppConfig } from '../../config/env';
 import type { AppDeps } from '../../deps';
-import { unauthenticated } from '../../lib/errors';
+import { badRequest, unauthenticated } from '../../lib/errors';
 import { audit } from '../audit/audit.service';
 
 export async function hashPassword(plain: string, cost?: number): Promise<string> {
@@ -37,7 +37,13 @@ export function verifyToken(config: AppConfig, token: string): { sub: string; ro
 }
 
 export function toUserDto(u: User): UserDto {
-  return { id: u.id, email: u.email, role: u.role as Role, displayName: u.displayName };
+  return {
+    id: u.id,
+    email: u.email,
+    role: u.role as Role,
+    displayName: u.displayName,
+    mustChangePassword: u.mustChangePassword,
+  };
 }
 
 // Fixed bcrypt hash (cost 10) of a random string, used for timing parity on unknown emails.
@@ -70,4 +76,29 @@ export async function login(
     token: signToken(deps.config, user as { id: string; role: Role }),
     user: toUserDto(user),
   };
+}
+
+export async function changePassword(
+  deps: AppDeps,
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<UserDto> {
+  const user = await deps.prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw unauthenticated();
+  if (!(await verifyPassword(currentPassword, user.passwordHash)))
+    throw badRequest('Current password is not correct', [
+      { path: 'currentPassword', message: 'Current password is not correct' },
+    ]);
+  const updated = await deps.prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+  });
+  await audit(deps, {
+    actorId: userId,
+    action: 'auth.change_password',
+    resourceType: 'user',
+    resourceId: userId,
+  });
+  return toUserDto(updated);
 }

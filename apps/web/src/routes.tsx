@@ -1,5 +1,6 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import ClinicianRoutes from '@/features/clinician/ClinicianRoutes';
+import { PasswordChangeGate } from '@/features/auth/ChangePassword';
 import Login from '@/features/auth/Login';
 import PatientRoutes from '@/features/patient/PatientRoutes';
 import { homeFor, RequireRole, useAuth } from '@/lib/auth';
@@ -35,7 +36,9 @@ export function AppRoutes() {
         path="/patient/*"
         element={
           <RequireRole role="PATIENT">
-            <PatientRoutes />
+            <PasswordChangeGate>
+              <PatientRoutes />
+            </PasswordChangeGate>
           </RequireRole>
         }
       />
@@ -43,7 +46,9 @@ export function AppRoutes() {
         path="/clinician/*"
         element={
           <RequireRole role="CLINICIAN">
-            <ClinicianRoutes />
+            <PasswordChangeGate>
+              <ClinicianRoutes />
+            </PasswordChangeGate>
           </RequireRole>
         }
       />

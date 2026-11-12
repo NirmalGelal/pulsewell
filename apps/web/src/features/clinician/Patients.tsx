@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { clinicianKeys, QueueResponseSchema, RiskBadge, formatShortDate } from './common';
 import { QueueTable } from './Queue';
+import { AddPatientDialog } from './AddPatientDialog';
 import { AskPanel, FollowUpDialog } from './panels';
+import { ResetPasswordButton } from './ResetPasswordButton';
 
 const PatientsResponseSchema = z.object({
   patients: z.array(
@@ -21,13 +23,17 @@ const PatientsResponseSchema = z.object({
 });
 
 export function PatientList() {
+  const [adding, setAdding] = useState(false);
   const q = useQuery({
     queryKey: clinicianKeys.patients,
     queryFn: () => api.get('/api/clinician/patients', PatientsResponseSchema),
   });
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6">
-      <h1 className="mb-4 text-[1.75rem] leading-tight">Patients</h1>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1 className="flex-1 text-[1.75rem] leading-tight">Patients</h1>
+        <Button onClick={() => setAdding(true)}>Add patient</Button>
+      </div>
       {q.isPending ? (
         <div role="status" aria-label="Loading patients" className="flex flex-col gap-px">
           {[0, 1, 2].map((i) => (
@@ -42,7 +48,7 @@ export function PatientList() {
         <div>
           <p className="font-serif text-lg">No linked patients.</p>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            Patients appear here once they link their account to you.
+            Add a patient to create their account and get a temporary password to share.
           </p>
         </div>
       ) : (
@@ -68,6 +74,7 @@ export function PatientList() {
           ))}
         </ul>
       )}
+      {adding && <AddPatientDialog onClose={() => setAdding(false)} />}
     </div>
   );
 }
@@ -97,6 +104,7 @@ export function PatientDetail() {
       </p>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-[1.75rem] leading-tight">{name}</h1>
+        <ResetPasswordButton patientId={id} patientName={name} />
         <Button variant="outline" onClick={() => setFollowUp(true)}>
           Send follow-up questions
         </Button>

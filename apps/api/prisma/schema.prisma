@@ -13,6 +13,7 @@ model User {
   passwordHash String
   role         String   // Role
   displayName  String
+  mustChangePassword Boolean @default(false) // true while a clinician-issued temporary password is in use
   createdAt    DateTime @default(now())
   patientLinks   CareLink[] @relation("PatientLinks")
   clinicianLinks CareLink[] @relation("ClinicianLinks")

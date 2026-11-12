@@ -134,6 +134,7 @@ model User {
   passwordHash String
   role         String   // Role
   displayName  String
+  mustChangePassword Boolean @default(false) // true while a clinician-issued temporary password is in use
   createdAt    DateTime @default(now())
   patientLinks   CareLink[] @relation("PatientLinks")
   clinicianLinks CareLink[] @relation("ClinicianLinks")
@@ -294,6 +295,7 @@ export type ErrorCode =
   | 'UNAUTHENTICATED'    // 401 — missing/invalid/expired token, bad credentials
   | 'FORBIDDEN'          // 403 — wrong role
   | 'NOT_FOUND'          // 404 — missing OR not owned
+  | 'CONFLICT'           // 409 — resource already exists (duplicate email)
   | 'INVALID_STATE'      // 409 — action not allowed in current session/report state
   | 'PAYLOAD_TOO_LARGE'  // 413 — audio upload > limit
   | 'LLM_UNAVAILABLE'    // 503 — all models for a role failed
@@ -304,7 +306,7 @@ export interface ErrorBody { error: { code: ErrorCode; message: string; details?
 ## 6. Shared value types (DTOs)
 
 ```ts
-export interface UserDto { id: string; email: string; role: Role; displayName: string }
+export interface UserDto { id: string; email: string; role: Role; displayName: string; mustChangePassword: boolean }
 
 export interface MessageDto {
   id: string; turnId: number; sender: Sender; text: string; inputMode: InputMode; createdAt: string;
@@ -454,7 +456,10 @@ Request bodies are validated with the named schema (`…Request` → `…Request
 |---|---|---|---|---|
 | GET | `/api/health` | — | — | 200 `{ ok: true, llmMode: 'live'\|'demo'\|'mock' }` |
 | POST | `/api/auth/login` | — | `LoginRequest { email, password }` | 200 `{ token: string, user: UserDto }` |
-| GET | `/api/auth/me` | any | — | 200 `{ user: UserDto }` |
+| GET | `/api/auth/me` | any | — | 200 `{ user: UserDto }` (allowed while `mustChangePassword`) |
+| POST | `/api/auth/change-password` | any | `ChangePasswordRequest { currentPassword, newPassword (min 10, must differ) }` | 200 `{ user: UserDto }`; clears `mustChangePassword`. Wrong current password or weak/unchanged new password -> 400 |
+
+While `User.mustChangePassword` is true, every authed route except `/api/auth/me` and `/api/auth/change-password` returns 403 `FORBIDDEN` with message `Password change required` (details `{ reason: 'PASSWORD_CHANGE_REQUIRED' }`).
 
 ### Patient — sessions & interview (M06)
 | Method | Path | Role | Request | 2xx Response |
@@ -495,6 +500,8 @@ export type ReportEditInput =
 | POST | `/api/clinician/reports/:reportId/review` | C(linked) | — | 200 `{ reviewedAt: string }`; session → CLINICIAN_REVIEWED (idempotent) |
 | POST | `/api/clinician/reports/:reportId/notes` | C(linked) | `CreateNoteRequest { text (1..4000) }` | 201 `ClinicianNoteDto` |
 | GET | `/api/clinician/patients` | C | — | 200 `{ patients: { id, displayName, lastApprovedAt: string\|null, riskLevel: RiskLevel }[] }` |
+| POST | `/api/clinician/patients` | C | `CreatePatientRequest { email (valid, lowercased), displayName (1..80) }` | 201 `{ patient: { id, email, displayName }, temporaryPassword }` (password shown once, 12 chars, no look-alike characters; user created with `mustChangePassword=true` and an active CareLink). Duplicate email -> 409 `CONFLICT` |
+| POST | `/api/clinician/patients/:patientId/reset-password` | C(linked) | — | 200 `{ temporaryPassword }`; sets `mustChangePassword=true`. Not linked / not a patient -> 404 |
 | POST | `/api/clinician/patients/:patientId/ask` | C(linked) | `AskRequest { question (3..1000) }` | 200 `AskResponse` |
 | POST | `/api/clinician/patients/:patientId/follow-ups` | C(linked) | `CreateFollowUpRequest { questions: string[] (1..3, each 3..300) }` | 201 `FollowUpDto` |
 | GET | `/api/clinician/alerts` | C | query `?status=open\|all` (default open) | 200 `{ alerts: AlertDto[] }` newest first |
@@ -623,3 +630,4 @@ Agents: append `- [MXX] <what changed> — <why>` when you change anything above
 
 - [M01] No contract changes. Notes: `ANNOTATABLE_SECTIONS` runtime const added to keys.ts (array form of `AnnotatableSection`); `ERROR_CODES` const added to schemas/errors.ts.
 - [M09] `PatientReportDto` gains optional `approvedAt: string | null` (set by `toPatientReportDto`) — review screen shows "Sent on {date}" for approved reports.
+- [Patient onboarding] `User.mustChangePassword Boolean @default(false)` (§4); `UserDto.mustChangePassword` (§8); new `ErrorCode` `CONFLICT` (409, duplicate email); new endpoints `POST /api/clinician/patients`, `POST /api/clinician/patients/:patientId/reset-password`, `POST /api/auth/change-password`; forced-change 403 rule on all other authed routes; audit actions `patient.create`, `patient.reset_password`, `auth.change_password` (ids only). Shared: `CreatePatientRequestSchema`, `ChangePasswordRequestSchema`, `MIN_PASSWORD_LENGTH`, `CreatePatientResponseSchema`, `ResetPasswordResponseSchema`.

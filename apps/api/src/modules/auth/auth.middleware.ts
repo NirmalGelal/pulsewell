@@ -1,10 +1,15 @@
 import type { Request, RequestHandler } from 'express';
 import type { Role, UserDto } from '@pvc/shared';
 import type { AppDeps } from '../../deps';
-import { forbidden, unauthenticated } from '../../lib/errors';
+import { AppError, forbidden, unauthenticated } from '../../lib/errors';
 import { toUserDto, verifyToken } from './auth.service';
 
-export function requireAuth(deps: AppDeps): RequestHandler {
+export interface RequireAuthOptions {
+  /** Let users with a pending forced password change through (only /me and change-password). */
+  allowPasswordChangePending?: boolean;
+}
+
+export function requireAuth(deps: AppDeps, options: RequireAuthOptions = {}): RequestHandler {
   return async (req, _res, next) => {
     try {
       const header = req.headers.authorization;
@@ -13,6 +18,10 @@ export function requireAuth(deps: AppDeps): RequestHandler {
       const { sub } = verifyToken(deps.config, m[1]);
       const user = await deps.prisma.user.findUnique({ where: { id: sub } });
       if (!user) throw unauthenticated();
+      if (user.mustChangePassword && !options.allowPasswordChangePending)
+        throw new AppError('FORBIDDEN', 'Password change required', {
+          reason: 'PASSWORD_CHANGE_REQUIRED',
+        });
       req.user = toUserDto(user);
       next();
     } catch (e) {

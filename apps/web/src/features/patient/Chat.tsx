@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Phone, Volume2, VolumeOff } from 'lucide-react';
+import { Phone, Video, Volume2, VolumeOff } from 'lucide-react';
 import {
   CRISIS_MESSAGE,
   CRISIS_RESOURCES,
@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { Composer } from './Composer';
 import { CrisisOverlay } from './CrisisOverlay';
 import { useReadAloud } from './useReadAloud';
+import { setMode, videoPath, videoSupported } from './video/prefs';
 
 type FinishState = 'idle' | 'working' | 'error';
 
@@ -321,6 +322,20 @@ export default function Chat() {
                 <VolumeOff aria-hidden="true" />
               )}
               <span>Read aloud</span>
+            </Button>
+          )}
+          {videoSupported() && interviewing && (
+            <Button
+              variant="outline"
+              className="h-10 px-3"
+              onClick={() => {
+                abortRef.current?.abort();
+                setMode('video');
+                navigate(videoPath(id));
+              }}
+            >
+              <Video aria-hidden="true" />
+              <span>Switch to video</span>
             </Button>
           )}
           <Button

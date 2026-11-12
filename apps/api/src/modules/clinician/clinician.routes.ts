@@ -3,6 +3,7 @@ import {
   AlertsQuerySchema,
   AskRequestSchema,
   CreateFollowUpRequestSchema,
+  CreatePatientRequestSchema,
   CreateNoteRequestSchema,
   IdParamSchema,
   PatientIdParamSchema,
@@ -11,6 +12,7 @@ import {
   type AskRequest,
   type CreateFollowUpRequest,
   type CreateNoteRequest,
+  type CreatePatientRequest,
 } from '@pvc/shared';
 import type { AppDeps } from '../../deps';
 import { validate } from '../../lib/validate';
@@ -19,6 +21,7 @@ import { acknowledgeAlert, listAlerts } from './alerts.service';
 import { askRecord } from './assistant.service';
 import { createFollowUp } from './followups.service';
 import { createNote } from './notes.service';
+import { createPatient, resetPatientPassword } from './onboarding.service';
 import { listPatients } from './patients.service';
 import { buildQueue } from './queue.service';
 import { markReviewed, viewReport } from './report.service';
@@ -64,6 +67,24 @@ export function clinicianRouter(deps: AppDeps): Router {
   r.get('/clinician/patients', async (req, res) => {
     res.json({ patients: await listPatients(deps, getUser(req).id) });
   });
+
+  r.post(
+    '/clinician/patients',
+    validate({ body: CreatePatientRequestSchema }),
+    async (req, res) => {
+      res
+        .status(201)
+        .json(await createPatient(deps, getUser(req).id, req.body as CreatePatientRequest));
+    },
+  );
+
+  r.post(
+    '/clinician/patients/:patientId/reset-password',
+    validate({ params: PatientIdParamSchema }),
+    async (req, res) => {
+      res.json(await resetPatientPassword(deps, getUser(req).id, String(req.params.patientId)));
+    },
+  );
 
   r.post(
     '/clinician/patients/:patientId/ask',
